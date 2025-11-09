@@ -1,0 +1,136 @@
+<div class="container mt-4">
+  <h1>Autodialer System</h1>
+  
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-white bg-primary">
+        <div class="card-body">
+          <h5 class="card-title">Total Calls</h5>
+          <p class="card-text display-4"><%= @stats[:total] %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-success">
+        <div class="card-body">
+          <h5 class="card-title">Completed</h5>
+          <p class="card-text display-4"><%= @stats[:completed] %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-danger">
+        <div class="card-body">
+          <h5 class="card-title">Failed</h5>
+          <p class="card-text display-4"><%= @stats[:failed] %></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-warning">
+        <div class="card-body">
+          <h5 class="card-title">Pending</h5>
+          <p class="card-text display-4"><%= @stats[:pending] %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Prompt Section -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>AI Voice Command</h5>
+    </div>
+    <div class="card-body">
+      <div class="input-group">
+        <input type="text" id="ai-prompt" class="form-control" placeholder="Say or type: 'Make a call to 18001234567'">
+        <button class="btn btn-primary" onclick="processAIPrompt()">Execute</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Numbers Section -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>Add Phone Numbers</h5>
+    </div>
+    <div class="card-body">
+      <%= form_with url: phone_calls_path, method: :post do |form| %>
+        <div class="mb-3">
+          <%= form.text_area :phone_numbers, class: 'form-control', rows: 5, 
+                placeholder: "Enter phone numbers (one per line or comma separated)\nExample:\n18001234567\n18001234568" %>
+        </div>
+        <%= form.submit 'Add Numbers to Queue', class: 'btn btn-success' %>
+      <% end %>
+      
+      <%= button_to 'Start Calling', start_calling_phone_calls_path, 
+            method: :post, class: 'btn btn-primary mt-2' %>
+    </div>
+  </div>
+
+  <!-- Calls Log -->
+  <div class="card">
+    <div class="card-header">
+      <h5>Call Log</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Phone Number</th>
+              <th>Status</th>
+              <th>Attempts</th>
+              <th>Created At</th>
+              <th>Completed At</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @phone_calls.each do |call| %>
+              <tr>
+                <td><%= call.phone_number %></td>
+                <td>
+                  <span class="badge bg-<%= status_badge_color(call.status) %>">
+                    <%= call.status.humanize %>
+                  </span>
+                </td>
+                <td><%= call.attempts %></td>
+                <td><%= call.created_at.strftime('%Y-%m-%d %H:%M') %></td>
+                <td><%= call.completed_at&.strftime('%Y-%m-%d %H:%M') || '-' %></td>
+                <td><%= call.duration ? "#{call.duration}s" : '-' %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function processAIPrompt() {
+  const prompt = document.getElementById('ai-prompt').value;
+  
+  fetch('/phone_calls/ai_prompt', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ prompt: prompt })
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert(data.message);
+    if (data.success) {
+      location.reload();
+    }
+  });
+}
+
+// Auto-refresh every 10 seconds
+setTimeout(() => {
+  location.reload();
+}, 10000);
+</script>

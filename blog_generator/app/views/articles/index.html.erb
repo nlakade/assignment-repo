@@ -1,0 +1,71 @@
+<div class="container mt-4">
+  <h1>AI Generated Blog</h1>
+  
+  <!-- AI Prompt Section -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5>AI Blog Generator</h5>
+    </div>
+    <div class="card-body">
+      <div class="input-group mb-3">
+        <input type="text" id="ai-prompt" class="form-control" 
+               placeholder="Say or type: 'Generate articles about Ruby, Python, JavaScript'">
+        <button class="btn btn-primary" onclick="generateArticles()">Generate Articles</button>
+      </div>
+      
+      <hr>
+      
+      <%= form_with url: articles_path, method: :post do |form| %>
+        <div class="mb-3">
+          <%= form.label :titles, 'Or enter titles manually (one per line):', class: 'form-label' %>
+          <%= form.text_area :titles, class: 'form-control', rows: 5, 
+                placeholder: "Ruby on Rails Best Practices\nJavaScript ES6 Features\nPython Machine Learning\nReact Hooks Tutorial" %>
+        </div>
+        <%= form.submit 'Generate Articles', class: 'btn btn-success' %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Articles List -->
+  <div class="row">
+    <% @articles.each do |article| %>
+      <div class="col-md-6 mb-4">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">
+              <%= link_to article.title, article_path(article.slug) %>
+            </h5>
+            <p class="card-text">
+              <%= truncate(strip_tags(article.content), length: 150) %>
+            </p>
+            <small class="text-muted">
+              Published: <%= article.published_at.strftime('%B %d, %Y') %>
+            </small>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+function generateArticles() {
+  const prompt = document.getElementById('ai-prompt').value;
+  
+  fetch('/articles/ai_generate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content
+    },
+    body: JSON.stringify({ prompt: prompt })
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert(data.message);
+    if (data.success) {
+      location.reload();
+    }
+  });
+}
+</script>
